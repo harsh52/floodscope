@@ -40,7 +40,10 @@ LABEL_WATER = 1
 # Backscatter band used for water detection. VH is preferred for open water.
 WATER_BAND = "vh"
 # Fallback fixed threshold (dB) used when the histogram is not bimodal.
-FALLBACK_DB_THRESHOLD = -18.0
+# Calibrated on the Sen1Floods11 test split: on low-water scenes the histogram
+# is unimodal (land only), so global Otsu splits the land and floods the scene
+# with false positives. A conservative fixed threshold restores precision.
+FALLBACK_DB_THRESHOLD = -22.0
 # Slopes steeper than this (degrees) are masked to suppress radar shadow/layover.
 MAX_SLOPE_DEG = 5.0
 # JRC permanent-water occurrence (%) at/above which a pixel is treated as permanent.

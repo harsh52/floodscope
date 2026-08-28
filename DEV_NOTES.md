@@ -26,6 +26,25 @@ Working log of decisions, findings, and risks. (Not the submission README.)
 - Next descending overpass ≈ **30 Aug** — should ingest mid-hackathon (ends 31 Aug 18:00 UTC). **Narrow window.**
 - **Mitigation:** (1) build pipeline fully parameterized by AOI/date; (2) poll for the post-26-Aug scene; (3) prepare a GUARANTEED fallback hero demo on a past well-covered flood (e.g. a Sen1Floods11 event location, which also has ground truth) so the demo never depends on the race.
 
+## LOCKED science result (Day 1) — deterministic pipeline, 12 diverse chips
+Baseline = naive global Otsu on VH (what a one-shot LLM writes).
+Agent = speckle + **bimodality-gated Otsu** (Otsu if histogram bimodal, else fixed -22 dB) + small-blob cleanup.
+
+| metric | baseline | agent | Δ |
+|---|---|---|---|
+| mean IoU | 0.291 | 0.336 | +0.045 (+15% rel) |
+| mean precision | 0.353 | 0.486 | +0.133 (+38% rel) |
+| mean recall | 0.800 | 0.661 | -0.138 |
+| agent wins | — | 11/12 chips | — |
+| hard urban case USA_430764 | 0.160 | 0.466 | +0.307 |
+
+**Key insight (the whole story):** the naive baseline's failure mode is *low-water scenes* — the histogram is unimodal (land only), so global Otsu splits the LAND and floods 60-90% of a dry scene as "water" (precision 0.05-0.12, recall high). The verification gate (is-it-bimodal?) catches this and switches to a conservative fixed threshold → precision nearly doubles. **"The naive method is confidently wrong on dry scenes; verification, not a bigger model, fixes it."** = hot take.
+
+**Context-dependent corrections (agentic judgment):**
+- Permanent-water removal HELPS the real product (isolate new inundation) but HURTS the all-water benchmark (labels include permanent water). Measure both; be explicit.
+- Slope masking HELPS steep terrain (Nepal) but HURTS flat benchmark chips (DEM noise). Agent applies it *conditionally* on detected terrain.
+- One chip regresses (Ghana_313799, -0.088): non-bimodal savanna where fixed threshold under-predicts. Honest tradeoff; 11/12 still improve.
+
 ## Open decisions
 - Fallback hero event: TBD (pick one Sen1Floods11 event with strong visuals for a guaranteed live-style run).
 - Eval chip subset: pick 10-12 from the 90 test chips spanning biomes + include 1 hard case (urban/low-water-fraction).

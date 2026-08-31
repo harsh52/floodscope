@@ -110,8 +110,17 @@ npm run build && npm run preview
 
 ## 4b. Run the LLM agent (advanced solution) — needs your own key
 
+Runs on **Claude or GPT-4o** — set whichever key you have (Anthropic is the default; the agent auto-selects,
+or force it with `FLOODSCOPE_PROVIDER=openai|anthropic`).
+
 ```bash
-export ANTHROPIC_API_KEY=sk-ant-...            # your key (participants use their own agent setup)
+# Claude (default):
+export ANTHROPIC_API_KEY=sk-ant-...
+PYTHONPATH=. .venv/bin/python -m floodscope.agent.flood_agent Spain_6860600
+
+# or GPT-4o:
+uv pip install openai
+export OPENAI_API_KEY=sk-...    # OPENAI_MODEL defaults to gpt-4o
 PYTHONPATH=. .venv/bin/python -m floodscope.agent.flood_agent Spain_6860600
 ```
 

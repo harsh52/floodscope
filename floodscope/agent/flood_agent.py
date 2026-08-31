@@ -23,9 +23,9 @@ Run: needs your own ANTHROPIC_API_KEY (participants use their own agent setup).
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass
 
-import anthropic
 import numpy as np
 
 from floodscope import data
@@ -36,9 +36,25 @@ from floodscope.eval.iou import evaluate
 from floodscope.geo import sar
 from floodscope.pipeline import FloodConfig, FloodResult, map_flood
 
-# Opus 4.8 pricing ($/token) for cost-per-report accounting.
-PRICE_IN, PRICE_OUT = 5.0 / 1e6, 25.0 / 1e6
+# Per-provider pricing ($/token) for cost-per-report accounting.
+PRICING = {
+    "anthropic": (5.0 / 1e6, 25.0 / 1e6),   # claude-opus-4-8
+    "openai": (2.5 / 1e6, 10.0 / 1e6),       # gpt-4o (approx)
+}
 MAX_TURNS = 8
+
+
+def _provider() -> str:
+    """Pick the LLM backend: explicit FLOODSCOPE_PROVIDER, else whichever key is set
+    (Anthropic preferred). The agent logic is identical either way."""
+    p = os.getenv("FLOODSCOPE_PROVIDER", "").lower()
+    if p in ("anthropic", "openai"):
+        return p
+    if os.getenv("ANTHROPIC_API_KEY"):
+        return "anthropic"
+    if os.getenv("OPENAI_API_KEY"):
+        return "openai"
+    return "anthropic"
 
 SYSTEM = """You are FloodScope, a flood-mapping analyst. Given a Sentinel-1 SAR scene, produce a
 water mask by choosing HOW to threshold it, then verifying your own result. Water is dark in SAR.
@@ -187,21 +203,26 @@ class FloodAgent:
                 "verify_result": self.verify_result}[name]()
 
 
-def run_agent(chip: str, model: str | None = None) -> AgentOutcome:
-    model = model or AGENT_MODEL
-    agent = FloodAgent(chip)
-    traj = Trajectory(agent="flood-agent", case=chip)
-    traj.system_prompt(SYSTEM)
-    user = f"Map the flood water in Sentinel-1 scene '{chip}'. Decide the thresholding strategy, verify it, and report."
-    traj.user_prompt(user)
+def _log_tool(traj: Trajectory, agent: FloodAgent, name: str, args: dict) -> str:
+    """Run one tool call, log it (verification events are special), return the JSON summary."""
+    traj.tool_call(name, args)
+    out = agent.dispatch(name, args)
+    summary = json.dumps(out)
+    if name == "verify_result":
+        traj.verification(passed=out["passed"], checks=out)
+    else:
+        traj.tool_result(name, summary=summary, ok=True)
+    return summary
 
+
+def _run_anthropic(agent, traj, model, system, user):
+    import anthropic
     client = anthropic.Anthropic()  # resolves ANTHROPIC_API_KEY / ant profile
     messages: list[dict] = [{"role": "user", "content": user}]
-    in_tok = out_tok = 0
-
+    in_tok = out_tok = turn = 0
     for turn in range(MAX_TURNS):
         resp = client.messages.create(
-            model=model, max_tokens=8000, system=SYSTEM, tools=TOOLS,
+            model=model, max_tokens=8000, system=system, tools=TOOLS,
             thinking={"type": "adaptive"}, messages=messages,
         )
         in_tok += resp.usage.input_tokens
@@ -209,28 +230,66 @@ def run_agent(chip: str, model: str | None = None) -> AgentOutcome:
         for block in resp.content:
             if block.type == "text" and block.text.strip():
                 traj.assistant_text(block.text)
-
         if resp.stop_reason == "end_turn":
-            traj.phase_complete("report")
             break
-
-        # execute tool calls, log each, feed results back
         messages.append({"role": "assistant", "content": resp.content})
-        results = []
-        for block in resp.content:
-            if block.type != "tool_use":
-                continue
-            traj.tool_call(block.name, dict(block.input))
-            out = agent.dispatch(block.name, dict(block.input))
-            summary = json.dumps(out)
-            if block.name == "verify_result":
-                traj.verification(passed=out["passed"], checks=out)
-            else:
-                traj.tool_result(block.name, summary=summary, ok=True)
-            results.append({"type": "tool_result", "tool_use_id": block.id, "content": summary})
+        results = [
+            {"type": "tool_result", "tool_use_id": b.id,
+             "content": _log_tool(traj, agent, b.name, dict(b.input))}
+            for b in resp.content if b.type == "tool_use"
+        ]
         messages.append({"role": "user", "content": results})
+    return in_tok, out_tok, turn + 1
 
-    cost = in_tok * PRICE_IN + out_tok * PRICE_OUT
+
+def _run_openai(agent, traj, model, system, user):
+    from openai import OpenAI
+    client = OpenAI()  # resolves OPENAI_API_KEY
+    oai_tools = [{"type": "function", "function": {
+        "name": t["name"], "description": t["description"], "parameters": t["input_schema"]}}
+        for t in TOOLS]
+    messages: list[dict] = [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    in_tok = out_tok = turn = 0
+    for turn in range(MAX_TURNS):
+        resp = client.chat.completions.create(
+            model=model, messages=messages, tools=oai_tools, tool_choice="auto",
+        )
+        if resp.usage:
+            in_tok += resp.usage.prompt_tokens
+            out_tok += resp.usage.completion_tokens
+        msg = resp.choices[0].message
+        if msg.content and msg.content.strip():
+            traj.assistant_text(msg.content)
+        if not msg.tool_calls:
+            break
+        messages.append({"role": "assistant", "content": msg.content or "", "tool_calls": [
+            {"id": tc.id, "type": "function",
+             "function": {"name": tc.function.name, "arguments": tc.function.arguments}}
+            for tc in msg.tool_calls]})
+        for tc in msg.tool_calls:
+            args = json.loads(tc.function.arguments or "{}")
+            summary = _log_tool(traj, agent, tc.function.name, args)
+            messages.append({"role": "tool", "tool_call_id": tc.id, "content": summary})
+    return in_tok, out_tok, turn + 1
+
+
+def run_agent(chip: str, model: str | None = None) -> AgentOutcome:
+    provider = _provider()
+    if model is None:
+        model = os.getenv("OPENAI_MODEL", "gpt-4o") if provider == "openai" else AGENT_MODEL
+    agent = FloodAgent(chip)
+    traj = Trajectory(agent="flood-agent", case=chip)
+    traj.system_prompt(SYSTEM)
+    traj.event("assistant_text", text=f"[provider={provider} model={model}]")
+    user = f"Map the flood water in Sentinel-1 scene '{chip}'. Decide the thresholding strategy, verify it, and report."
+    traj.user_prompt(user)
+
+    runner = _run_openai if provider == "openai" else _run_anthropic
+    in_tok, out_tok, turns = runner(agent, traj, model, SYSTEM, user)
+    traj.phase_complete("report")
+
+    price_in, price_out = PRICING[provider]
+    cost = in_tok * price_in + out_tok * price_out
     traj.usage(input_tokens=in_tok, output_tokens=out_tok, cost_usd=round(cost, 4))
     traj.human_review(decision="pending", note="flood map awaiting analyst sign-off before publication")
 
@@ -244,13 +303,13 @@ def run_agent(chip: str, model: str | None = None) -> AgentOutcome:
     traj.checkpoint({"metrics": metrics, "cost_usd": round(cost, 4)})
     path = traj.close()
     render_markdown(path)
-    return AgentOutcome(agent.last, metrics, round(cost, 4), turn + 1, str(path))
+    return AgentOutcome(agent.last, metrics, round(cost, 4), turns, str(path))
 
 
 def main() -> None:
     import sys
     chip = sys.argv[1] if len(sys.argv) > 1 else "Spain_6860600"
-    print(f"Running FloodScope agent on {chip} (model {AGENT_MODEL}) ...")
+    print(f"Running FloodScope agent on {chip} (provider {_provider()}) ...")
     out = run_agent(chip)
     print(f"  turns={out.turns}  cost=${out.cost_usd}  metrics={out.metrics}")
     print(f"  trajectory: {out.trajectory_path}")

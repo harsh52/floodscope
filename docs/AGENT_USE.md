@@ -74,4 +74,6 @@ PYTHONPATH=. .venv/bin/python -m floodscope.agent.traj_render <path>.ndjson
   ```
 
 The agent reuses the same primitives as the pipeline, so the science is identical — the agent supplies only
-the judgement (which strategy, is the result plausible, retry or accept).
+the judgement (which strategy, is the result plausible, retry or accept). It runs on **Claude
+(`claude-opus-4-8`)** or **OpenAI (`gpt-4o`)** — it auto-selects by whichever key is set, or force it with
+`FLOODSCOPE_PROVIDER=anthropic|openai`. Same tools, same trajectory format either way.

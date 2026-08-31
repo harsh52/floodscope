@@ -14,6 +14,8 @@ published.
 > Every agent run emits a real trajectory; the LLM supplies the *judgement*, the deterministic layer does
 > the auditable science.
 
+![FloodScope explorer — before/after flood map on the Narayani River, Nepal (pre-monsoon vs post-flood). Cyan = surface water, amber = new inundation vs the dry-season baseline. The `Live_Narayani_agent` scene was acquired, analysed, reported, and published by the LLM agent.](docs/img/explorer.png)
+
 ---
 
 ## 1. Who has this problem, and why it matters

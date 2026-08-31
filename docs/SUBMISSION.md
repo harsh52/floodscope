@@ -24,8 +24,9 @@ verification-gated workflow + live change detection. Compared on the same cases 
 - Every claim tied to evidence → CSV / tiles / trajectories.
 - Coding-agent use disclosed → [`docs/AGENT_USE.md`](AGENT_USE.md).
 
-**Known scope note (stated plainly):** the analysis workflow is deterministic in this first submission;
-the LLM-agent layer is the planned advanced iteration (schema/tooling already in place).
+**Two tiers (stated plainly):** deterministic pipeline (reproducible, no-key) for the benchmark + live demos;
+LLM tool-use agent (`floodscope/agent/flood_agent.py`, `claude-opus-4-8`) that decides per-scene strategy,
+verifies, retries, and stops at a human checkpoint — run with your own `ANTHROPIC_API_KEY`.
 
 ## What still needs the participant
 1. **Record the 5-min video** (storyboard ready).

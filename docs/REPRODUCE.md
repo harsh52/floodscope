@@ -108,6 +108,19 @@ npm run build && npm run preview
 
 ---
 
+## 4b. Run the LLM agent (advanced solution) — needs your own key
+
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...            # your key (participants use their own agent setup)
+PYTHONPATH=. .venv/bin/python -m floodscope.agent.flood_agent Spain_6860600
+```
+
+- **What it does:** a Claude (`claude-opus-4-8`) tool-use agent inspects the scene, chooses a `FloodConfig`,
+  runs segmentation, verifies plausibility, retries if it flooded a dry scene, and stops at a human
+  checkpoint. Try a dry scene (`Spain_6860600`, `Somalia_699062`) to see the verify-and-retry behaviour.
+- **Output:** prints turns / cost / IoU and writes `trajectories/flood-agent/<chip>.{ndjson,md}`.
+- **Cost:** a few cents per scene (Opus pricing; one short tool-use loop).
+
 ## 5. Read a trajectory
 
 ```bash

@@ -57,10 +57,21 @@ PYTHONPATH=. .venv/bin/python -m floodscope.agent.traj_render <path>.ndjson
 
 ---
 
-## C. Honest scope note
+## C. Two agent tiers
 
-In this first submission the analysis **workflow is deterministic and rule-based** — the "tool calls" and
-"verification" are real pipeline steps, not LLM turns. The trajectory schema, tool boundaries, and
-human-checkpoint were built so the **advanced iteration** can route the per-scene decisions through an
-**LLM agent** (sandboxed, credential-isolated) with no change to the trajectory format. That agentic layer
-is the planned next step, to be discussed for the final submission.
+- **Deterministic pipeline** (`floodscope/pipeline.py`) — the reproducible, no-key science layer. Its
+  trajectories (`floodscope-pipeline/*`, `floodscope-live/*`) are structured step logs, not LLM turns.
+- **LLM agent** (`floodscope/agent/flood_agent.py`) — a **Claude (`claude-opus-4-8`) tool-use agent** that
+  makes the per-scene decisions itself: it calls `inspect_scene`, chooses a `FloodConfig` from the evidence,
+  calls `run_segmentation`, calls `verify_result`, and **retries with a different config when verification
+  fails** (e.g. Otsu flooded a dry scene), then stops at a human-review checkpoint. Each turn — the model's
+  reasoning, every tool call and result, the verification, retries, cost — is written to
+  `trajectories/flood-agent/<chip>.{ndjson,md}`. This is a genuine agent trajectory. Run it with your own
+  `ANTHROPIC_API_KEY`:
+
+  ```bash
+  PYTHONPATH=. python -m floodscope.agent.flood_agent Spain_6860600
+  ```
+
+The agent reuses the same primitives as the pipeline, so the science is identical — the agent supplies only
+the judgement (which strategy, is the result plausible, retry or accept).

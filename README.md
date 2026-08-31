@@ -153,10 +153,12 @@ No API key is required for the flood mapping or the benchmark (all data is publi
 - **Coding agent used to build this:** Claude Code (Anthropic). Disclosure and how each agent instruction
   maps to a result are in [`docs/AGENT_USE.md`](docs/AGENT_USE.md).
 
-> **Honest scope note:** in this first submission the analysis workflow is **deterministic and rule-based**;
-> it emits structured, agent-style trajectories (tool calls → verification → human checkpoint). Routing the
-> per-scene decisions through an **LLM agent** (sandboxed, credential-isolated) is the planned **advanced
-> iteration** — the trajectory schema and tool boundaries are already built for it.
+> **Two solution tiers:** the **deterministic pipeline** (`floodscope/pipeline.py`) is the reproducible,
+> no-key science layer used for the benchmark and live demos. The **LLM agent**
+> (`floodscope/agent/flood_agent.py`) is a Claude tool-use agent that *decides* the per-scene threshold
+> strategy, verifies its own output, retries on failure, and stops at a human checkpoint — routing the same
+> primitives through genuine model judgement, and emitting a real LLM trajectory. Run it with your own
+> `ANTHROPIC_API_KEY`: `PYTHONPATH=. python -m floodscope.agent.flood_agent Spain_6860600`.
 
 ---
 

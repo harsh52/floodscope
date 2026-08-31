@@ -158,7 +158,13 @@ No API key is required for the flood mapping or the benchmark (all data is publi
 > (`floodscope/agent/flood_agent.py`) is a Claude tool-use agent that *decides* the per-scene threshold
 > strategy, verifies its own output, retries on failure, and stops at a human checkpoint — routing the same
 > primitives through genuine model judgement, and emitting a real LLM trajectory. Run it with your own
-> `ANTHROPIC_API_KEY`: `PYTHONPATH=. python -m floodscope.agent.flood_agent Spain_6860600`.
+> `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`): `PYTHONPATH=. python -m floodscope.agent.flood_agent Spain_6860600`.
+>
+> The **orchestrator** (`floodscope/agent/orchestrator.py`) goes end-to-end: the LLM *acquires* live
+> Sentinel-1 for an AOI, *analyses* it (choosing the method), *verifies*, **writes the analyst report
+> itself**, and — after a human sign-off — *publishes* the result to the dashboard. Verified live on
+> GPT-4o (~$0.02/run): `PYTHONPATH=. python -m floodscope.agent.orchestrator`. The written report appears
+> under the **Report** tab in the explorer.
 
 ---
 

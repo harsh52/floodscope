@@ -30,6 +30,7 @@ the human checkpoint.
 |---|---|
 | `trajectories/floodscope-live/Nepal_Narayani_live.md` | the **live** 26 Aug 2026 Nepal run: STAC search → load VH → speckle+threshold → change detection → verification → **human review** |
 | `trajectories/floodscope-live/Nepal_Narayani_live.ndjson` | the same run, machine-readable (what a judge replays) |
+| `trajectories/flood-orchestrator/Live_Narayani_agent.md` | **end-to-end LLM orchestrator** (GPT-4o): acquire live Sentinel-1 → inspect → map → verify → **writes the report** → human sign-off → publish to dashboard |
 | `trajectories/flood-agent/USA_905409.md` | **real LLM agent** (GPT-4o): water-rich scene → agent reasons "bimodal" → picks `gated_otsu` → IoU **0.912** |
 | `trajectories/flood-agent/Spain_6860600.md` | **real LLM agent**: dry scene → agent reasons "unimodal, low water" → picks `fixed`, avoiding the naive flood |
 | `trajectories/floodscope-pipeline/USA_430764.md` | a benchmark run on the hard urban case (biggest deterministic win, IoU 0.16→0.47) |

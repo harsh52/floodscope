@@ -145,4 +145,15 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 1
 .traj-text { white-space: pre-wrap; word-break: break-word; margin-top: 2px; font-size: 12.5px; }
 .traj-text.mono { font-family: ui-monospace, Menlo, monospace; font-size: 11.5px; color: #cbd5e1; background: var(--panel2); padding: 6px 8px; border-radius: 6px; }
 
+/* LLM-written report */
+.report { padding: 12px 14px 16px; }
+.report-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+.report-head b { font-size: 14px; }
+.conf { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; padding: 2px 7px; border-radius: 999px; }
+.conf-high { background: rgba(34,197,94,.16); color: #86efac; }
+.conf-medium { background: rgba(250,204,21,.16); color: #fde68a; }
+.conf-low { background: rgba(249,115,22,.16); color: #fdba74; }
+.report-body { white-space: pre-wrap; font-size: 13px; line-height: 1.55; color: var(--text); background: var(--panel2); border: 1px solid var(--line); border-radius: 8px; padding: 12px; }
+.report-foot { margin-top: 10px; color: var(--muted); font-size: 11.5px; }
+
 .fatal { padding: 40px; color: var(--muted); max-width: 640px; line-height: 1.6; }

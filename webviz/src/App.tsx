@@ -9,7 +9,7 @@ export default function App() {
   const [chips, setChips] = useState<ChipEntry[]>([]);
   const [selected, setSelected] = useState<string | null>(null);
   const mode: Mode = "present"; // baseline submission: before/after only
-  const [tab, setTab] = useState<"metrics" | "trajectory">("metrics");
+  const [tab, setTab] = useState<"metrics" | "trajectory" | "report">("metrics");
   const [err, setErr] = useState<string | null>(null);
 
   useEffect(() => {
@@ -28,6 +28,10 @@ export default function App() {
   }, []);
 
   const chip = useMemo(() => chips.find((c) => c.chip === selected) ?? null, [chips, selected]);
+
+  useEffect(() => {
+    if (tab === "report" && chip && !chip.report) setTab("metrics");
+  }, [chip, tab]);
 
   if (err)
     return (
@@ -112,6 +116,11 @@ export default function App() {
             <button className={tab === "metrics" ? "on" : ""} onClick={() => setTab("metrics")}>
               Metrics
             </button>
+            {chip.report && (
+              <button className={tab === "report" ? "on" : ""} onClick={() => setTab("report")}>
+                Report
+              </button>
+            )}
             <button className={tab === "trajectory" ? "on" : ""} onClick={() => setTab("trajectory")}>
               Trajectory
             </button>
@@ -119,7 +128,18 @@ export default function App() {
           <div className="panel-title">
             {chip.chip} <span className="muted">· {chip.note}</span>
           </div>
-          {tab === "metrics" ? <MetricsPanel chip={chip} /> : <TrajectoryTab chip={chip} />}
+          {tab === "metrics" && <MetricsPanel chip={chip} />}
+          {tab === "trajectory" && <TrajectoryTab chip={chip} />}
+          {tab === "report" && chip.report && (
+            <div className="report">
+              <div className="report-head">
+                <b>{chip.report.title}</b>
+                <span className={`conf conf-${chip.report.confidence}`}>{chip.report.confidence} confidence</span>
+              </div>
+              <div className="report-body">{chip.report.markdown}</div>
+              <div className="report-foot">✍️ written by the LLM agent · reviewed by a human before publication</div>
+            </div>
+          )}
         </aside>
       </div>
     </div>

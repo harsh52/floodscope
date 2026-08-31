@@ -90,5 +90,94 @@
       "area_pct": 3.7
     },
     "delta_iou": null
+  },
+  {
+    "chip": "Live_Narayani_agent",
+    "note": "Flood report for AOI [84.2, 27.63, 84.46, 27.83] - August 2026",
+    "live": true,
+    "acquired": {
+      "pre": "2026-03-30T12:22:31.207141Z",
+      "post": "2026-08-28T12:21:54.261291Z"
+    },
+    "bounds": [
+      [
+        27.624682560001514,
+        84.1946877143283
+      ],
+      [
+        27.835046573905984,
+        84.4648083996452
+      ]
+    ],
+    "view": [
+      [
+        27.624682560001514,
+        84.1946877143283
+      ],
+      [
+        27.835046573905984,
+        84.4648083996452
+      ]
+    ],
+    "center": [
+      27.72986456695375,
+      84.32974805698674
+    ],
+    "size": [
+      569,
+      654
+    ],
+    "pixel_m": 40,
+    "present": {
+      "before": "tiles/Live_Narayani_agent/before.png",
+      "before_mask": "tiles/Live_Narayani_agent/water_pre.png",
+      "after": "tiles/Live_Narayani_agent/after.png",
+      "mask": "tiles/Live_Narayani_agent/water.png",
+      "mask2": "tiles/Live_Narayani_agent/flood.png",
+      "before_label": "Pre \u00b7 2026-03-30",
+      "after_label": "Post \u00b7 2026-08-28",
+      "mask_label": "Surface water",
+      "mask2_label": "New inundation",
+      "legend": [
+        {
+          "color": "#38bdf8",
+          "label": "surface water"
+        },
+        {
+          "color": "#facc15",
+          "label": "new inundation"
+        }
+      ]
+    },
+    "tiles": {
+      "sar": "tiles/Live_Narayani_agent/sar.png",
+      "optical": "tiles/Live_Narayani_agent/after.png",
+      "baseline": "tiles/Live_Narayani_agent/baseline.png",
+      "agent": "tiles/Live_Narayani_agent/water.png"
+    },
+    "trajectory": "trajectories/Live_Narayani_agent.ndjson",
+    "metrics": {
+      "baseline": {
+        "threshold_method": "global-otsu(naive)"
+      },
+      "agent": {
+        "threshold_method": "p12-fallback+slope_mask",
+        "surface_water_km2": 21.62,
+        "new_inundation_km2": 15.26,
+        "area_pct": 3.7
+      }
+    },
+    "flood": {
+      "surface_water_km2": 21.62,
+      "new_inundation_km2": 15.26,
+      "area_pct": 3.7,
+      "area_km2": 21.62
+    },
+    "report": {
+      "title": "Flood Analysis for AOI [84.2, 27.63, 84.46, 27.83] on 2026-08-28",
+      "confidence": "high",
+      "markdown": "### Flood Analysis Report for AOI [84.2, 27.63, 84.46, 27.83]\n\n#### Event Dates\n- **Pre-event:** March 30, 2026\n- **Post-event:** August 28, 2026\n\n#### Analysis Summary\nThe flood analysis for the specified Area of Interest (AOI) was conducted using Sentinel-1 SAR imagery, with almost complete coverage (99%). The mapping used a fixed threshold method with steep slopes masked due to the terrain's characteristics.\n\n#### Results:\n- **Total Surface Water Area:** 21.62 km\u00b2\n- **New Inundation Area:** 15.26 km\u00b2\n\nThe fixed threshold method was chosen because the scene's histogram indicated a unimodal distribution. Steep slopes were also masked since the terrain is not entirely flat. The flood detection proceeded without any significant issues or anomalies in the data.\n\n#### Key Caveats\n- The inundation mapping employed \"p12-fallback+slope_mask,\" indicating the water extent estimate is coarse.\n- There is a lack of ground truth data to validate the results rigorously.\n- Consider this analysis as a component of broader monitoring efforts, especially considering potential monsoon season variations.\n\n#### Confidence Level: High\nThe results are consistent and plausible based on the data, methodology, and contextual understanding of the AOI during this season.\n"
+    },
+    "delta_iou": null
   }
 ]

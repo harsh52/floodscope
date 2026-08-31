@@ -45,6 +45,7 @@ export interface ChipEntry {
   present?: Present;
   trajectory: string;
   metrics: { baseline: Metrics; agent: Metrics };
+  report?: { title: string; confidence: string; markdown: string };
   delta_iou: number | null;
 }
 

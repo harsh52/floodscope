@@ -41,7 +41,7 @@ PRICING = {
     "anthropic": (5.0 / 1e6, 25.0 / 1e6),   # claude-opus-4-8
     "openai": (2.5 / 1e6, 10.0 / 1e6),       # gpt-4o (approx)
 }
-MAX_TURNS = 8
+MAX_TURNS = 12
 
 
 def _provider() -> str:
@@ -215,14 +215,14 @@ def _log_tool(traj: Trajectory, agent: FloodAgent, name: str, args: dict) -> str
     return summary
 
 
-def _run_anthropic(agent, traj, model, system, user):
+def _run_anthropic(agent, traj, model, system, user, tools=TOOLS):
     import anthropic
     client = anthropic.Anthropic()  # resolves ANTHROPIC_API_KEY / ant profile
     messages: list[dict] = [{"role": "user", "content": user}]
     in_tok = out_tok = turn = 0
     for turn in range(MAX_TURNS):
         resp = client.messages.create(
-            model=model, max_tokens=8000, system=system, tools=TOOLS,
+            model=model, max_tokens=8000, system=system, tools=tools,
             thinking={"type": "adaptive"}, messages=messages,
         )
         in_tok += resp.usage.input_tokens
@@ -242,12 +242,12 @@ def _run_anthropic(agent, traj, model, system, user):
     return in_tok, out_tok, turn + 1
 
 
-def _run_openai(agent, traj, model, system, user):
+def _run_openai(agent, traj, model, system, user, tools=TOOLS):
     from openai import OpenAI
     client = OpenAI()  # resolves OPENAI_API_KEY
     oai_tools = [{"type": "function", "function": {
         "name": t["name"], "description": t["description"], "parameters": t["input_schema"]}}
-        for t in TOOLS]
+        for t in tools]
     messages: list[dict] = [{"role": "system", "content": system}, {"role": "user", "content": user}]
     in_tok = out_tok = turn = 0
     for turn in range(MAX_TURNS):

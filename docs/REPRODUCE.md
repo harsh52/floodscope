@@ -135,6 +135,13 @@ export OPENAI_API_KEY=sk-...    # OPENAI_MODEL defaults to gpt-4o
 PYTHONPATH=. .venv/bin/python -m floodscope.agent.flood_agent Spain_6860600
 ```
 
+**End-to-end orchestrator** (acquire → analyse → report → publish, LLM-written report):
+```bash
+PYTHONPATH=. .venv/bin/python -m floodscope.agent.orchestrator   # default AOI = Narayani/Chitwan
+```
+Pulls live Sentinel-1, maps the flood, writes the report, and (after a human checkpoint) publishes to the
+dashboard — the result shows up in `webviz/` with a **Report** tab. ~$0.02/run; needs a key + internet.
+
 - **What it does:** a Claude (`claude-opus-4-8`) tool-use agent inspects the scene, chooses a `FloodConfig`,
   runs segmentation, verifies plausibility, retries if it flooded a dry scene, and stops at a human
   checkpoint. Try a dry scene (`Spain_6860600`, `Somalia_699062`) to see the verify-and-retry behaviour.

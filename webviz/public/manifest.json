@@ -1,0 +1,94 @@
+[
+  {
+    "chip": "Nepal_Narayani_live",
+    "note": "LIVE \u00b7 26 Aug 2026 flood, Narayani R. at Chitwan \u00b7 dry-season\u2192post-flood \u00b7 no ground truth",
+    "live": true,
+    "acquired": {
+      "pre": "2026-03-30T12:22:31.207141Z",
+      "post": "2026-08-28T12:21:54.261291Z"
+    },
+    "bounds": [
+      [
+        27.624682560001514,
+        84.1946877143283
+      ],
+      [
+        27.835046573905984,
+        84.4648083996452
+      ]
+    ],
+    "view": [
+      [
+        27.624682560001514,
+        84.1946877143283
+      ],
+      [
+        27.835046573905984,
+        84.4648083996452
+      ]
+    ],
+    "center": [
+      27.72986456695375,
+      84.32974805698674
+    ],
+    "size": [
+      569,
+      654
+    ],
+    "pixel_m": 40,
+    "present": {
+      "before": "tiles/Nepal_Narayani_live/before.png",
+      "before_mask": "tiles/Nepal_Narayani_live/water_pre.png",
+      "after": "tiles/Nepal_Narayani_live/after.png",
+      "mask": "tiles/Nepal_Narayani_live/water.png",
+      "mask2": "tiles/Nepal_Narayani_live/flood.png",
+      "before_label": "Pre-monsoon \u00b7 2026-03-30",
+      "after_label": "Post-flood \u00b7 2026-08-28",
+      "mask_label": "Surface water",
+      "mask2_label": "Inundation vs dry season",
+      "legend": [
+        {
+          "color": "#38bdf8",
+          "label": "surface water"
+        },
+        {
+          "color": "#facc15",
+          "label": "inundation vs dry-season baseline"
+        }
+      ]
+    },
+    "tiles": {
+      "sar": "tiles/Nepal_Narayani_live/sar.png",
+      "optical": "tiles/Nepal_Narayani_live/after.png",
+      "water": "tiles/Nepal_Narayani_live/water.png",
+      "flood": "tiles/Nepal_Narayani_live/flood.png",
+      "baseline": "tiles/Nepal_Narayani_live/baseline.png",
+      "agent": "tiles/Nepal_Narayani_live/water.png",
+      "permanent": "tiles/Nepal_Narayani_live/permanent.png"
+    },
+    "trajectory": "trajectories/Nepal_Narayani_live.ndjson",
+    "metrics": {
+      "baseline": {
+        "threshold_method": "global-otsu(naive)",
+        "pred_water_px": 167176,
+        "area_km2": 267.48,
+        "area_pct": 45.2
+      },
+      "agent": {
+        "threshold_method": "p12-fallback",
+        "surface_water_km2": 21.62,
+        "new_inundation_km2": 15.26,
+        "pred_water_px": 13510,
+        "area_km2": 21.62,
+        "area_pct": 3.7
+      }
+    },
+    "flood": {
+      "surface_water_km2": 21.62,
+      "new_inundation_km2": 15.26,
+      "area_km2": 21.62,
+      "area_pct": 3.7
+    },
+    "delta_iou": null
+  }
+]

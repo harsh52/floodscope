@@ -1,0 +1,66 @@
+# Agent use & trajectories
+
+This documents (a) the coding agents used to **build** FloodScope, and (b) the run **trajectories** the
+workflow emits — the required "agent trajectories" deliverable.
+
+---
+
+## A. Coding agents used to build this project (disclosure)
+
+| Tool | Role | What it did |
+|---|---|---|
+| **Claude Code** (Anthropic, Claude Opus) | primary coding agent | scaffolded the pipeline, wrote the eval harness, the live acquisition, the React explorer, and these docs — under human direction and review at every step |
+
+All code was written during the hackathon with a human (the participant) directing, reviewing, and
+deciding every design choice. No other AI coding tools were used. Building this submission with a coding
+agent satisfies the challenge's "coding-agent use is required + disclose your tools" rule.
+
+---
+
+## B. Run trajectories (the workflow's decision log)
+
+Every FloodScope run writes a **trajectory**: newline-delimited JSON (`.ndjson`), one event per line, plus
+an auto-rendered human-readable transcript (`.md`). It is easy to follow from the instruction through to
+the result, shows each tool call and its response, the verification signal that shaped the next step, and
+the human checkpoint.
+
+**Representative trajectories to review:**
+
+| File | What it captures |
+|---|---|
+| `trajectories/floodscope-live/Nepal_Narayani_live.md` | the **live** 26 Aug 2026 Nepal run: STAC search → load VH → speckle+threshold → change detection → verification → **human review** |
+| `trajectories/floodscope-live/Nepal_Narayani_live.ndjson` | the same run, machine-readable (what a judge replays) |
+| `trajectories/floodscope-pipeline/USA_430764.md` | a benchmark run on the hard urban case (biggest agent win, IoU 0.16→0.47) |
+| `trajectories/floodscope-pipeline/Spain_6860600.md` | a low-water scene where the verification gate refuses Otsu and falls back conservatively |
+
+**Event vocabulary** (`floodscope/agent/trajectory.py`): `system_prompt`, `user_prompt`, `assistant_text`,
+`code_emitted`, `tool_call`, `tool_result`, `code_stdout`, `verification`, `retry`, `human_review`,
+`checkpoint`, `usage`, `phase_complete`.
+
+**Example (excerpt, Nepal live):**
+```
+tool_call     stac_search {collection: sentinel-1-grd, orbit: ascending}
+tool_result   selected S1D_..._20260828T122141_... @ 2026-08-28
+tool_call     change_detect {rule: "water in POST and not in PRE, min_blob=8"}
+tool_result   new inundation 15.26 km² (…); total post-water 21.62 km²
+verification   PASSED  {threshold_method: …, permanent_channel_excluded: true, no_ground_truth: true}
+human_review   pending — "live flood extent requires analyst sign-off before any use"
+```
+
+The **Trajectory tab** in the web explorer (`webviz/`) plays these events back visually next to the map, so
+the result and *how it was produced* are shown together.
+
+Regenerate a Markdown transcript from any `.ndjson`:
+```bash
+PYTHONPATH=. .venv/bin/python -m floodscope.agent.traj_render <path>.ndjson
+```
+
+---
+
+## C. Honest scope note
+
+In this first submission the analysis **workflow is deterministic and rule-based** — the "tool calls" and
+"verification" are real pipeline steps, not LLM turns. The trajectory schema, tool boundaries, and
+human-checkpoint were built so the **advanced iteration** can route the per-scene decisions through an
+**LLM agent** (sandboxed, credential-isolated) with no change to the trajectory format. That agentic layer
+is the planned next step, to be discussed for the final submission.

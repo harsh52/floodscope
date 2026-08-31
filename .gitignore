@@ -22,3 +22,7 @@ reports/*.png
 # OS / editor
 .DS_Store
 .idea/
+
+# Scratch (not part of submission)
+debug/
+micro1 - First Hackathon*.pdf

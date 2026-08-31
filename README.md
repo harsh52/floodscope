@@ -6,10 +6,13 @@ from free, all-weather **Sentinel-1 radar**, with a verification gate that stops
 biggest failure — *confidently flooding dry land* — and a human-review checkpoint before any map is
 published.
 
-> This submission covers the **baseline** (naive one-shot thresholding) and the **advanced** workflow
-> (verification-gated + change detection), measured against ground truth on a public benchmark and then
-> run **live** on the 26 Aug 2026 Nepal flood. The interactive viewer is currently focused on that live
-> scene; the benchmark harness still runs the full 12-scene comparison for the measured-improvement claim.
+> **Baseline** = a one-shot LLM that writes naive threshold code (floods dry land).
+> **Advanced** = an **LLM agent** that inspects each scene, *chooses* a verification-gated strategy,
+> verifies its own output and retries on failure — and, end-to-end, **acquires the live imagery, writes the
+> analyst report itself, and publishes to a dashboard**, all behind a human checkpoint. Measured against
+> hand-labelled ground truth on a public benchmark, and run **live** on the 26 Aug 2026 Nepal flood.
+> Every agent run emits a real trajectory; the LLM supplies the *judgement*, the deterministic layer does
+> the auditable science.
 
 ---
 
@@ -45,6 +48,14 @@ no-key data**, with every number traceable to an artifact and a reviewer sign-of
 Both are run on the **same evaluation cases** so the comparison is fair. The baseline is exactly what a
 one-shot LLM emits (`FloodConfig.baseline()`), which is why it is a meaningful control.
 
+**Who decides:** the advanced method is not hard-coded — an **LLM agent**
+(`floodscope/agent/flood_agent.py`, Claude or GPT-4o) inspects each scene and *chooses* the config, then
+**verifies** its output and **retries** if it flooded a dry scene. The **orchestrator**
+(`floodscope/agent/orchestrator.py`) runs the whole job: it acquires the live imagery, analyses it, writes
+the analyst report in its own words, and publishes to the dashboard — with a human sign-off before
+publication. The LLM supplies judgement; the deterministic primitives (below) do the science. See the
+real agent trajectories in `trajectories/flood-agent/` and `trajectories/flood-orchestrator/`.
+
 ---
 
 ## 3. Measured improvement (Sen1Floods11, hand-labelled ground truth)
@@ -65,6 +76,11 @@ hand labels. Evidence: [`reports/eval_results.csv`](reports/eval_results.csv). R
 crying wolf. On low-water scenes (Spain, Somalia, Mekong) the baseline's precision is 5–12%; the
 verification gate roughly **doubles precision** by refusing to trust Otsu when the scene isn't genuinely
 bimodal. One scene regresses (`Ghana_313799`, non-bimodal savanna) — a disclosed, honest trade-off.
+
+**These are the LLM agent's own choices.** Run per-scene, the agent independently selects the same
+strategy the benchmark uses — `gated_otsu` on the bimodal `USA_905409` (IoU **0.912**), `fixed` on the dry
+`Spain`/`Somalia` scenes — so the measured gains are reproduced as *autonomous decisions*, verified live on
+GPT-4o at ~$0.009/scene. Evidence: `trajectories/flood-agent/*.md`.
 
 ---
 
@@ -103,6 +119,9 @@ so the live numbers are plausibility-checked, not label-verified, and the map ca
 | + pre/post change detection | New inundation = water in POST and not in PRE | isolates event water from the permanent channel | Kept (live path) |
 | **Removed:** Δ-backscatter "impact corridor" in the Rasuwa gorge | Tried mapping the flash-flood scar directly in steep terrain | dominated by layover noise + off-swath nodata | **Removed** — taught us the gorge is unmappable at 40 m; move downstream to the flat Narayani |
 | Live + explorer + trajectory + human checkpoint | Package it as a reproducible tool a person would use | live 21.6 km² map, before/after viewer, NDJSON trajectory | Kept |
+| **+ LLM tool-use agent** | Route the per-scene method choice through an LLM (inspect → choose → verify → retry) instead of a fixed config | GPT-4o picks `gated_otsu` (bimodal, IoU 0.91) vs `fixed` (dry) autonomously; verify catches the naive flood → retry. Evidence: `trajectories/flood-agent/*` | **Kept — this is the agent** |
+| + dual provider (Claude / GPT-4o) | Don't lock to one vendor; auto-select by key | same tools + trajectory on either backend | Kept |
+| **+ LLM orchestrator (acquire→analyse→report→publish)** | Expand the LLM from "pick a threshold" to running the whole job and **writing the report itself** | end-to-end live run, LLM-written analyst report on the dashboard, human sign-off before publish. Evidence: `trajectories/flood-orchestrator/*`, Report tab | **Kept — the advanced solution** |
 
 ---
 
@@ -122,10 +141,12 @@ request (AOI + dates)
   report    area affected (km², %), before/after PNGs, GeoJSON-ready mask, trajectory   ── scripts/export_viz.py, webviz/
 ```
 
-- **Science layer** (`floodscope/`): the deterministic primitives — testable without any network or model.
+- **Science layer** (`floodscope/`, `floodscope/live.py`): deterministic primitives — testable without any network or model.
+- **LLM agent** (`floodscope/agent/flood_agent.py`): Claude/GPT-4o tool-use agent that chooses the method, verifies, retries.
+- **LLM orchestrator** (`floodscope/agent/orchestrator.py`): the full acquire→analyse→**write report**→publish loop, human-gated.
 - **Evaluation** (`floodscope/eval/`): baseline-vs-advanced on Sen1Floods11 ground truth.
 - **Live acquisition** (`scripts/acquire_nepal.py`): fresh Sentinel-1, pre/post change detection, slope mask.
-- **Explorer** (`webviz/`): React + Leaflet before/after viewer with the flood-area readout and trajectory playback.
+- **Explorer** (`webviz/`): React + Leaflet before/after viewer with flood-area readout, **Report** tab, and trajectory playback.
 - **Trajectories** (`trajectories/`, `floodscope/agent/`): every run emits NDJSON + a readable Markdown transcript.
 
 ---
@@ -147,11 +168,12 @@ No API key is required for the flood mapping or the benchmark (all data is publi
 
 ## 8. Agent trajectories & tool disclosure
 
-- **Run trajectories** (the workflow's decision log — tool calls, verification gate, human checkpoint):
-  `trajectories/floodscope-live/Nepal_Narayani_live.{ndjson,md}` (live) and
-  `trajectories/floodscope-pipeline/*.{ndjson,md}` (benchmark). See [`docs/AGENT_USE.md`](docs/AGENT_USE.md).
-- **Coding agent used to build this:** Claude Code (Anthropic). Disclosure and how each agent instruction
-  maps to a result are in [`docs/AGENT_USE.md`](docs/AGENT_USE.md).
+- **LLM agent trajectories** (real Claude/GPT-4o tool-use — the instruction, each tool call, verification,
+  retries, human checkpoint): `trajectories/flood-orchestrator/Live_Narayani_agent.{ndjson,md}` (the full
+  acquire→report→publish loop) and `trajectories/flood-agent/*.{ndjson,md}` (per-scene decisions).
+- **Deterministic pipeline traces** (the science step-log): `trajectories/floodscope-{live,pipeline}/*`.
+- **Coding agent used to build this:** Claude Code (Anthropic). Disclosure + how each agent instruction
+  maps to a result: [`docs/AGENT_USE.md`](docs/AGENT_USE.md).
 
 > **Two solution tiers:** the **deterministic pipeline** (`floodscope/pipeline.py`) is the reproducible,
 > no-key science layer used for the benchmark and live demos. The **LLM agent**

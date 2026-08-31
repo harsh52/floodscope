@@ -19,6 +19,17 @@ Written for someone starting from a **clean clone**. Every command is copy-paste
 - **Sen1Floods11** hand-labelled chips — public Google Cloud bucket over anonymous HTTPS (auto-downloaded, cached in `data/sen1floods11/`).
 - **Microsoft Planetary Computer** — Sentinel-1 GRD + Copernicus DEM, anonymous access (live acquisition).
 
+### What reproduces *exactly* vs what may drift
+
+| Result | Command | Determinism |
+|---|---|---|
+| **Baseline vs advanced table** (the headline measured improvement) | §2 `run_eval` | **Exact** — static Sen1Floods11 dataset, no key. |
+| **Interactive dashboard** (Nepal before/after) | §4 `npm run dev` | **Exact** — reads committed assets (`webviz/public/`), no key, no script run needed. |
+| Live Nepal *re-acquisition* | §3 `acquire_nepal.py` | **May drift** — pulls live Planetary Computer scenes; numbers move if newer scenes ingest, and needs those dates to be available. The dashboard above already ships the result. |
+| LLM agent | §4b `flood_agent` | **Needs your own key** (Anthropic or OpenAI). Committed trajectories are the evidence; a live run reproduces the *behaviour*, not identical tokens. |
+
+**Start with §2 and §4** — they are the main results and need no key or live data.
+
 ---
 
 ## 1. Set up the environment (~2 min)

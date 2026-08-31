@@ -273,8 +273,30 @@ def _run_openai(agent, traj, model, system, user):
     return in_tok, out_tok, turn + 1
 
 
+def _preflight(provider: str) -> None:
+    """Fail with a clear, actionable message (not a raw traceback) if the chosen
+    provider's SDK or key is missing."""
+    if provider == "openai":
+        try:
+            import openai  # noqa: F401
+        except ImportError:
+            raise SystemExit("OpenAI backend needs the SDK:  uv pip install openai")
+        if not os.getenv("OPENAI_API_KEY"):
+            raise SystemExit("Set OPENAI_API_KEY (your own key) to run the OpenAI agent. "
+                             "See docs/REPRODUCE.md §4b.")
+    else:  # anthropic
+        try:
+            import anthropic  # noqa: F401
+        except ImportError:
+            raise SystemExit("Anthropic backend needs the SDK:  uv pip install anthropic")
+        if not (os.getenv("ANTHROPIC_API_KEY") or os.getenv("ANTHROPIC_AUTH_TOKEN")):
+            raise SystemExit("Set ANTHROPIC_API_KEY, or FLOODSCOPE_PROVIDER=openai to use GPT-4o. "
+                             "See docs/REPRODUCE.md §4b.")
+
+
 def run_agent(chip: str, model: str | None = None) -> AgentOutcome:
     provider = _provider()
+    _preflight(provider)
     if model is None:
         model = os.getenv("OPENAI_MODEL", "gpt-4o") if provider == "openai" else AGENT_MODEL
     agent = FloodAgent(chip)

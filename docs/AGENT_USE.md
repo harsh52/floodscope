@@ -30,8 +30,9 @@ the human checkpoint.
 |---|---|
 | `trajectories/floodscope-live/Nepal_Narayani_live.md` | the **live** 26 Aug 2026 Nepal run: STAC search → load VH → speckle+threshold → change detection → verification → **human review** |
 | `trajectories/floodscope-live/Nepal_Narayani_live.ndjson` | the same run, machine-readable (what a judge replays) |
-| `trajectories/floodscope-pipeline/USA_430764.md` | a benchmark run on the hard urban case (biggest agent win, IoU 0.16→0.47) |
-| `trajectories/floodscope-pipeline/Spain_6860600.md` | a low-water scene where the verification gate refuses Otsu and falls back conservatively |
+| `trajectories/flood-agent/USA_905409.md` | **real LLM agent** (GPT-4o): water-rich scene → agent reasons "bimodal" → picks `gated_otsu` → IoU **0.912** |
+| `trajectories/flood-agent/Spain_6860600.md` | **real LLM agent**: dry scene → agent reasons "unimodal, low water" → picks `fixed`, avoiding the naive flood |
+| `trajectories/floodscope-pipeline/USA_430764.md` | a benchmark run on the hard urban case (biggest deterministic win, IoU 0.16→0.47) |
 
 **Event vocabulary** (`floodscope/agent/trajectory.py`): `system_prompt`, `user_prompt`, `assistant_text`,
 `code_emitted`, `tool_call`, `tool_result`, `code_stdout`, `verification`, `retry`, `human_review`,
@@ -77,3 +78,7 @@ The agent reuses the same primitives as the pipeline, so the science is identica
 the judgement (which strategy, is the result plausible, retry or accept). It runs on **Claude
 (`claude-opus-4-8`)** or **OpenAI (`gpt-4o`)** — it auto-selects by whichever key is set, or force it with
 `FLOODSCOPE_PROVIDER=anthropic|openai`. Same tools, same trajectory format either way.
+
+**Verified end-to-end (GPT-4o), ~$0.009/scene:** the agent adapts per scene — `gated_otsu` on a water-rich
+bimodal scene (`USA_905409`, IoU **0.912**), `fixed` on dry scenes (`Spain_6860600`, `Somalia_699062`),
+avoiding the naive dry-scene flood. Committed trajectories: `trajectories/flood-agent/*.{ndjson,md}`.
